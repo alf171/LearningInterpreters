@@ -1,0 +1,85 @@
+
+##  [Chapter 3] The Lox Language
+
+The Lox Language
+  - Dynamic typing
+    - variables can store values of any type
+    - plus, variables can change type throughout execution
+    - results in a simpler implementation
+    - we are deferring type checking to runtime
+  - Automatic memory management
+    - managing memory can be tedious
+    - two main techniques
+      - reference counting
+      - tracing garbage collection (gc)
+        - they are more so sides of a spectrum
+        - ref counting need to do some tracing to handle cycles
+  - Data types
+    - only a couple types
+      - Booleans
+      - Numbers (only double precision floats)
+      - String
+      - Nil = represent no value (very hard to remove in dynamically typed languages)
+  - Expressions
+    - arithmetic (+, -, *, /)
+    - technically binary operators
+    - infix operator as opposed to prefix (* 2 3)
+    - (- x) is actually both infix and prefix
+  - Comparison and equality
+    - less < than and equality checks with != and == (valid even if types aren't same)
+  - Logical operators
+    - !true;
+    - true and false => false
+    - true or false => true
+    - also short circuits
+  - Precedence and grouping
+    - each operator have the same associativity and precedence from C
+    - can use ( ) to group stuff
+  - Statements
+    - an expressions main job is to produce a value
+    - a statements job is to produce an effect
+    - an expression followed by a ; promotes it to a statement
+    - can wrap statements in blocks to bundle them together
+      - blocks also impact scoping
+  - Variables
+    - declare them with a var statement, no value implicitly assigns nil
+  - Control Flow
+    - need to be able to skip code or run code more than once
+    - if-else, while, for
+  - Functions
+    - f(x);
+    - without () it doesn't call the fn just refers to it
+    - an argument is an actual value you pass to a function when you call it
+    - a parameter is a variable that holds the value of the argument inside the body of the function
+    - if we reach the end without a return, we just return nil
+  - Closures
+    - functions are first class in Lox = they are real values you can get a reference to etc
+    - ex) f(g)(x, y) where f, g are functions and x, y are arguments
+    - also, since function declarations are statements, we can have nested functions
+    - closure is when functions hold references to their surrounding state (like local vars) in case they need them for execution
+      - adds some complexity since variable scope can no longer be thought of as a stack
+        - i.e. local variable cant just disappear once out of reference
+  - Classes
+    - half way to functional and half way object oriented
+    - all inheritance always produced some monsters
+    - some way of compounding data is very useful
+    - classes vs prototypes
+      - two approaches to objects
+      - class based languages, instances and classes
+        - instances store the state for each object and have a reference to the instance's class
+        - classes contain the methods and inheritance chain
+        - to get an instance's methods need to go to the class and maybe even inheritance chain
+      - prototypes merged these concepts => only objects no classes
+        - objects can inherit from each other or delegate
+    - init method, members, variables
+  - Inheritance
+    - < operator in Lox can be used for inheritance    
+      - even the init() method gets inherited
+    - values are primitives due to order of implementation
+  - The Standard Library
+    - set of functionality that is implemented directly in the interpreter
+    - we already have a built in print other than that super minimal
+    - some benchmarking stuff is added later like clock()
+    - String manipulation, trigonometric functions, file I/O, networking, user input, etc
+
+

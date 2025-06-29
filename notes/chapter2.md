@@ -65,7 +65,33 @@ Stages:
       - the runtime gets passed into the VM along with byte code
 
 Shortcuts and Alternate Routes
-  <!-- - single pass compilers -->
-  <!--   - some simple compilers interleave parsing, analysis, and code generation -->
+  - single pass compilers
+    - some simple compilers interleave parsing, analysis, and code generation
+    - as a result, they never produce an AST or other IRs
+    - pascal and c were designed around this limitation
+    - memory was very valuable at the time, the whole source file couldn't be held
+    - why you can't call a function above it's def in C w/o a forward declaration to tell the compiler
+  - tree-walker interpreters
+    - compiler executes code right after parsing into AST (maybe some analysis)
+    - interpreter traverses the syntax tree one branch / leaf at a time
+    - common for student projects + little languages (tends to be slow)
+  - transpilers
+    - write a frontend in your language then transpile it into another totally valid language
+    - use to call source-to-source compilers also
+    - JS is an example
+    - goes from FE -> scanner and parser -> transpile
+  - just in-time compilation
+    - compile to byte code native to the platform
+    - the most complex ones insert profiling hooks into code generation
+    - overtime, they recompile the hot spots with more advanced optimizations
+      - like the hot spot VM
 
-LEFT OFF: Page 16
+Compilers and Interpreters
+  - Compiling = translating source language to another (usually lower level form)
+    - when you generate bytecode or machine code, you are compiling
+    - but also when you transpile you are compiling too
+  -  a language implements a compiler means we translate source code to some other form w/o executing
+  - Interpreter = we take source code and execute it immediately (runs programs from the source)
+    - gcc/clang take C code and compile to machine code
+  - CPython for example is an interpreted and has a compiler. most scripting languages work like this
+  - 
