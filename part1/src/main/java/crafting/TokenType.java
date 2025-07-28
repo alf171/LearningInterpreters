@@ -1,3 +1,4 @@
+package crafting;
 
 public enum TokenType {
   // single char tokens

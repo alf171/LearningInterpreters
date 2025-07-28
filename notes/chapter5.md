@@ -1,0 +1,31 @@
+
+## [Chapter 5] Representing Code
+
+  - In previous chapter, we set up the entire lexical grammar
+  - Next, we are going to setup syntactic grammar
+    - we will make it functional and then add more features progressively adding more completeness later
+  - How would we resolve this expression
+  - 1 + 2 * 3 - 4
+  - one way to visualize this is with a tree and using post-order traversal
+  - (2 * 3) -> + -> - -> answer
+  - we are going to generate a context free grammar
+    - head = name
+    - body = describes what it generates
+  - example notation
+    - protein -> ("fried", "poached") "eggs";
+    - crispiness -> "really" "really"* -- star is repeat 0+ times
+    - crispiness -> "really"+ (appear at least once)
+    - breakfast -> protein ("with" breakfast "on the side")? ; -- ? zero or one time (optional)
+  - Lox Expressions
+    - Literals: Numbers, strings, Booleans, and nil
+    - Unary expressions: a prefix !~ to perform a logical not and - to negate a number
+    - Binary Expressions: the infix arithmetic (+, -, *, /) and logic (==, !=, <, <= >=, <, >)
+    - Parentheses: A pair of ( and ) wrapped around an expression
+    - Notation
+      - expression -> literal | unary | binary | grouping;
+      - literal -> NUMBER | STRING | "true" | "false" | "nil";
+      - grouping -> "(" expression ")";
+      - unary -> ("-" | "!") expression;
+      - binary -> expression operator expression;
+      - operator -> "==" | "!=" | "<" | "<=" | ">" | ">=" | "+" | "-" | "*" | "/";
+    - since this structure represents the syntax of our language, we call it a syntax tree

@@ -1,0 +1,11 @@
+crafting/Scanner.class
+crafting/Expr$Literal.class
+crafting/Expr$Grouping.class
+crafting/Lox.class
+crafting/Expr$Binary.class
+crafting/Expr$Visitor.class
+crafting/Expr.class
+crafting/TokenType.class
+crafting/Expr$Unary.class
+crafting/AstPrinter.class
+crafting/Token.class

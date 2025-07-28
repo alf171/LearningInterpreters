@@ -1,3 +1,4 @@
+package crafting;
 
 public class Token {
   final TokenType type;
