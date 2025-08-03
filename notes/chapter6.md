@@ -43,3 +43,7 @@
     - be fast, parsing is occurring constantly 
     - also should report all errors separately
   - Panic mode error recovery
+    - as soon as parser detects error, we enter panic mode
+    - we then need to recover in some sort of valid state to continue parsing
+      - this is called synchronization
+  - 
