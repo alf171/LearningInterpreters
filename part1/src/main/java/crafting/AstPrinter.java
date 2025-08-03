@@ -51,6 +51,8 @@ public class AstPrinter implements Expr.Visitor<String> {
 
   /**
    * Test functionality
+   *
+   * Result: (* (- 123) (group 45.67))
    */
   public static void main(String[] args) {
     Expr expression = new Expr.Binary(new Expr.Unary(
