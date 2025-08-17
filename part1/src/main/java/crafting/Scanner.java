@@ -42,6 +42,12 @@ public class Scanner {
     public List<Token> scanTokens() {
         while (!isAtEnd()) {
             start = current;
+            // at the start of scanToken()
+            assert !isAtEnd() : "scanToken() called at EOF";
+
+            // right before calling number()
+            assert isDigit(source.charAt(current - 1)) || isDigit(peek())
+                    : "number() entered but not on a digit";
             scanToken();
         }
         tokens.add(new Token(TokenType.EOF, "", null, line));
@@ -157,7 +163,7 @@ public class Scanner {
      * Check if the current char is a digit
      */
     private boolean isDigit(char c) {
-        return c >= '0' || c <= '9';
+        return c >= '0' && c <= '9';
     }
 
     /**
@@ -188,10 +194,10 @@ public class Scanner {
         // also support fractions
         if (peek() == '.' && isDigit(peekNext())) {
             advance();
-        }
 
-        while (isDigit(peek())) {
-            advance();
+            while (isDigit(peek())) {
+                advance();
+            }
         }
 
         Double NUMBER = Double.parseDouble(source.substring(start, current));
@@ -249,6 +255,7 @@ public class Scanner {
      * further lookahead.
      */
     private char peek() {
+
         if (isAtEnd()) {
             return '\0';
         }
