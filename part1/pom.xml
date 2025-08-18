@@ -16,7 +16,6 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.11.0</version>
         <configuration>
-          <!-- Prefer release over source/target on JDK 9+ -->
           <release>22</release>
         </configuration>
       </plugin>

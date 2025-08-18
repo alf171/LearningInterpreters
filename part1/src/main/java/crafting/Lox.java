@@ -56,11 +56,18 @@ public class Lox {
         Parser parser = new Parser(tokens);
         List<Stmt> statements = parser.parse();
 
-        if (hadError)
+        if (hadError) {
             return;
+        }
+
+        Resolver resolver = new Resolver(interpreter);
+        resolver.resolve(statements);
+
+        if (hadError) {
+            return;
+        }
 
         interpreter.interpret(statements);
-        // System.out.println(new AstPrinter().print(expression));
     }
 
     public static void runtimeError(RuntimeError error) {

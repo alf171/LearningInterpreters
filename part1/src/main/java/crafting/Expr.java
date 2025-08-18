@@ -1,5 +1,7 @@
 package crafting;
 
+import java.util.List;
+
 /**
  * This component is kept functional since no one really owns Expr.
  * This more so serves as a bag of data benefitting from a functional impl.
@@ -8,22 +10,19 @@ abstract class Expr {
     interface Visitor<R> {
         R visitBinaryExpr(Binary expr);
 
-        // R visitCallExpr(Call expr);
-        // R visitGetExpr(Get expr);
         R visitGroupingExpr(Grouping expr);
 
         R visitLiteralExpr(Literal expr);
 
-        // R visitLogicalExpr(Logical expr);
-        // R visitSetExpr(Set expr);
-        // R visitSuperExpr(Super expr);
-        // R visitThisExpr(This expr);
         R visitUnaryExpr(Unary expr);
 
         R visitVariableExpr(Variable variable);
 
         R visitAssignExpr(Assign expr);
-        // R VariableExpr(Variable expr);
+
+        R visitLogicalExpr(Logical expr);
+
+        R visitCallExpr(Call expr);
     }
 
     abstract <R> R accept(Visitor<R> visitor);
@@ -44,23 +43,6 @@ abstract class Expr {
             return visitor.visitBinaryExpr(this);
         }
     }
-
-    // static class Call extends Expr {
-    // public final Expr callee;
-    // public final Token paren;
-    // public final List<Expr> arguments;
-    //
-    // public Call(Expr callee, Token paren, List<Expr> arguments) {
-    // this.callee = callee;
-    // this.paren = paren;
-    // this.arguments = arguments;
-    // }
-    //
-    // @Override
-    // <R> R accept(Visitor<R> visitor) {
-    // return visitor.visitCallExpr(this);
-    // }
-    // }
 
     static class Grouping extends Expr {
         public final Expr expression;
@@ -128,6 +110,40 @@ abstract class Expr {
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitAssignExpr(this);
+        }
+    }
+
+    static class Logical extends Expr {
+        public final Expr left;
+        public final Token operator;
+        public final Expr right;
+
+        public Logical(Expr left, Token operator, Expr right) {
+            this.left = left;
+            this.operator = operator;
+            this.right = right;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitLogicalExpr(this);
+        }
+    }
+
+    static class Call extends Expr {
+        public final Expr callee;
+        public final Token paren;
+        public final List<Expr> arguments;
+
+        public Call(Expr callee, Token paren, List<Expr> arguments) {
+            this.callee = callee;
+            this.paren = paren;
+            this.arguments = arguments;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitCallExpr(this);
         }
     }
 }

@@ -21,3 +21,13 @@
 - logic_and -> equality ("and" equality)* ;
 - while loops
   - TODO: continue
+- statement includes whileStmt;
+  - while -> "while "(" expression ")" statement;
+  - we can write a program which isn't bound be the length of the source code
+- for statement:
+- "for" "(" (varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement;
+  - first clause is the initializer -- runs exactly once
+  - next is the condition, controls when to exit the loop
+    - runs once at beginning and each iteration
+  - last clause is the increment -- does some work each iteration (needs side effects)
+  - take advantage of the fact that all while loops can be for loops

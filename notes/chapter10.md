@@ -1,0 +1,34 @@
+# Chapter 10 - Functions
+
+- Function calls
+  - average(1, 2);
+  - getCallback()();
+  - first paren has getCallback as its callee while second
+  - second indicates the function call
+  - this expression has high precedence has higher precedence than any other operator
+    - even unary
+    - call -> primary ( "(" arguments? ")")* ;
+    - arguments -> expression ( "," expression )* ;
+    - we consider arguments optional so that we can represent 0
+- function arity
+  - number of arguments a fnuction or operator expects
+  - determined by number of params
+  - fun add(a,b,c) { print a + b + c}
+  - add(1,2,3,4), add(1,2) - both are not valid
+- Native Functions
+  - user defined functions are implemented in the host language
+  - sometimes called primitives, external functions, or foreign functions
+  - some languages provide a FFI (foreign function interface)
+    - this is a way for users to write  function in the underlying platform
+    - we won't introduce FFI but we will add a single native function
+- funDecl -> "fun" function ;
+- function -> IDENTIFIER "(" parameters? ")" block ;
+- parameters -> IDENTIFIER ( "," IDENTIFIER )* ;
+- returnStmt -> "return" expression? ";";
+- there is one whole to patch with this def
+- call() creates a new environment where it binds the function's params
+- right now, the parent is always the top level global environment
+  - nested functions wouldn't function properly currently
+  - this is called CLOSURE
+- we've let a tiny bit of dynamic scoping leak into the interpreter
+- next chapter, we will explore lexical scope
