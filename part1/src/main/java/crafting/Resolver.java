@@ -15,7 +15,8 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
 
     private enum FunctionType {
         NONE,
-        FUNCTION
+        FUNCTION,
+        METHOD
     }
 
     private FunctionType currentFunction = FunctionType.NONE;
@@ -57,6 +58,19 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitClassStmt(Stmt.Class stmt) {
+        declare(stmt.name);
+        define(stmt.name);
+
+        for (Stmt.Function method : stmt.methods) {
+            FunctionType type = FunctionType.METHOD;
+            resolveFunction(method, type);
+        }
+
+        return null;
+    }
+
     private void resolve(Stmt stmt) {
         stmt.accept(this);
     }
@@ -66,8 +80,7 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     /**
-     * check if we are in the initializer for some variable
-     * first declare false = not ready
+     * Check if the variable is already defined in nonglobal scope.
      */
     private void declare(Token name) {
         if (scopes.isEmpty()) {
@@ -81,6 +94,10 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         scope.put(name.lexeme, false);
     }
 
+    /**
+     * Set the variable in the scope map to true to mark that it has
+     * been fully initialized and can be used
+     */
     private void define(Token name) {
         if (scopes.isEmpty()) {
             return;
@@ -118,7 +135,6 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     @Override
     public Void visitFunctionStmt(Stmt.Function stmt) {
         declare(stmt.name);
-        define(stmt.name);
 
         resolveFunction(stmt, FunctionType.FUNCTION);
         return null;
@@ -220,6 +236,19 @@ public class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     @Override
     public Void visitUnaryExpr(Expr.Unary expr) {
         resolve(expr.right);
+        return null;
+    }
+
+    @Override
+    public Void visitGetExpr(Expr.Get expr) {
+        resolve(expr.object);
+        return null;
+    }
+
+    @Override
+    public Void visitSetExpr(Expr.Set expr) {
+        resolve(expr.value);
+        resolve(expr.object);
         return null;
     }
 }

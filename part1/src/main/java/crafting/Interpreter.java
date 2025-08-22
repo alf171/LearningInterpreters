@@ -155,6 +155,30 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return function.call(this, arguments);
     }
 
+    @Override
+    public Object visitGetExpr(Expr.Get expr) {
+        Object object = evaluate(expr.object);
+        if (object instanceof LoxInstance) {
+            return ((LoxInstance) object).get(expr.name);
+        }
+
+        throw new RuntimeError(expr.name, "Only instances have properties.");
+    }
+
+    @Override
+    public Object visitSetExpr(Expr.Set expr) {
+        Object object = evaluate(expr.object);
+
+        if (!(object instanceof LoxInstance)) {
+            throw new RuntimeError(expr.name, "Only instances have fields");
+        }
+
+        Object value = evaluate(expr.value);
+        ((LoxInstance) object).set(expr.name, value);
+        // print someObject.field = 123; is valid
+        return value;
+    }
+
     private void execute(Stmt stmt) {
         stmt.accept(this);
     }
@@ -228,7 +252,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitPrintStmt(Stmt.Print stmt) {
-        Object value = evaluate(stmt.value);
+        Object value = evaluate(stmt.expression);
         System.out.println(stringify(value));
         return null;
     }
@@ -262,7 +286,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Void visitWhileStmt(Stmt.While stmt) {
-        while (isTruthy(stmt.condition)) {
+        while (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.body);
         }
         return null;
@@ -282,6 +306,21 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             value = evaluate(stmt.value);
         }
         throw new Return(value);
+    }
+
+    @Override
+    public Void visitClassStmt(Stmt.Class stmt) {
+        enviroment.define(stmt.name.lexeme, null);
+
+        Map<String, LoxFunction> methods = new HashMap<>();
+        for (Stmt.Function method : stmt.methods) {
+            LoxFunction fn = new LoxFunction(method, enviroment);
+            methods.put(method.name.lexeme, fn);
+        }
+
+        LoxClass klass = new LoxClass(stmt.name.lexeme, methods);
+        enviroment.assign(stmt.name, klass);
+        return null;
     }
 
     public void executeBlock(List<Stmt> statements, Enviroment enviroment) {

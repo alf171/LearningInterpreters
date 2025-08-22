@@ -23,6 +23,10 @@ abstract class Expr {
         R visitLogicalExpr(Logical expr);
 
         R visitCallExpr(Call expr);
+
+        R visitGetExpr(Get expr);
+
+        R visitSetExpr(Set expr);
     }
 
     abstract <R> R accept(Visitor<R> visitor);
@@ -144,6 +148,37 @@ abstract class Expr {
         @Override
         <R> R accept(Visitor<R> visitor) {
             return visitor.visitCallExpr(this);
+        }
+    }
+
+    static class Get extends Expr {
+        public final Expr object;
+        public final Token name;
+
+        public Get(Expr object, Token name) {
+            this.object = object;
+            this.name = name;
+        }
+
+        @Override
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitGetExpr(this);
+        }
+    }
+
+    static class Set extends Expr {
+        public final Expr object;
+        public final Token name;
+        public final Expr value;
+
+        public Set(Expr object, Token name, Expr value) {
+            this.object = object;
+            this.name = name;
+            this.value = value;
+        }
+
+        <R> R accept(Visitor<R> visitor) {
+            return visitor.visitSetExpr(this);
         }
     }
 }
