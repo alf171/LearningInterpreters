@@ -1,0 +1,8 @@
+CompileFlags:
+  Remove:
+    - "-std=*"
+  Add:
+    - "-std=c11"
+    - "-x"
+    - c
+    - "-Iinclude"
