@@ -1,0 +1,17 @@
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Scanner.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Return.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Enviroment.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Expr.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/LoxCallable.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/RuntimeError.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Interpreter.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/TokenType.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Resolver.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/LoxInstance.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/LoxFunction.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Parser.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Stmt.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/LoxClass.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/AstPrinter.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Lox.java
+/Users/alaffont/Desktop/projects/learninginterpreters/part1/src/main/java/crafting/Token.java
