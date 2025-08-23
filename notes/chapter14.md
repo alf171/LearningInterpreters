@@ -70,5 +70,33 @@
   - when we add an element and we dont have capacity (i.e. count == capacity, we resize)
 Steps
     1. Allocated a new array with more capacity
-    2. copy the existing elements from the old array to the new one
-    3. 
+    2. Copy the existing elements from the old array to the new one
+    3. Store the new capacity
+    4. Delete the old array
+    5. Update code to point to new array
+    6. Store the element in the new array (since there is room)
+    7. update the count
+- C doesn't have constructs so we declare a function to initialize a new chunk
+- okay so now we can run stuff by pushing things into memory
+- but we cant tell if it's working
+- for that we need a disassembler > assembler switch name to ADD MULT
+- disassembler goes other way around
+- for now, well only support double precision floating point number
+  - abstract how values are represented in Clox `typedef double Value;`
+  - For small fixed-sized values like ints, many instructions store \
+    in the code stream right after the opcode
+  - these are called immediate instructions
+    - instructions are immediately after the opcode
+- doesn't work well for strings or large variable sized things
+- In native compilers, we store in a separate "constant data" region
+- then we use address + offset pointing to where the value is stored in section
+- jvm associates a constant pool with each compiled class
+- for clox, each chunk will carry a list the values that appear as literals in program
+  - keep things simple, we'll put everything in there even ints
+- OP_CONST requires 2 bytes instead of 1 or return
+  - 1 byte for opcode, 1 for constant index
+  - the op code will define how many bytes we need to read
+- we'll need to store lines so when a runtime error occurs, we can give source
+- very inefficient approach in terms of memory
+  - each chunk contains the number in the array corresponding to the bytecode
+  - when runtime error occurs, we use it to lookup our line

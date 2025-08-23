@@ -1,0 +1,45 @@
+# Chapter 15 - A Virtual Machine
+
+- we begin with the backend of our compiler
+- the virtual machine is one aprt of our interpreter's internal architecture
+- you give it a chunk of code, and it runs it
+- we are going to use a global vm which is an interesting choice
+  - if we passed around VM
+  - the host app can control when and where memory for the VM is allocated
+  - run multiple VMs in parallel
+  - global stuff is also bad in general but we'll try to keep it small
+- ip is used to keep track of where the vm is in the program
+  - = instruction pointer
+  - other common name is "PC" or program counter
+- this process is called decoding or dispatching the instruction
+- we give the location of the next instruct in a contiguous block to the vm
+- imagine this code: print echo(echo(1) + echo(2)) + echo(echo(4) + echo(5));
+- it becomes slightly challenging to execute this without a recursive tree walk
+- in what order should to VM run things? since it processes bytes sequentially
+- it seems to be first in last out. which is a stack!
+- stack based interpreters aren't a silver bullet
+  - modern implementations of the JVM, the CLR, and JS all use JIT compilation pipelines
+  - these generate much faster native code on the fly
+- this is fast enough to be used by a production quality language
+- we use direct pointer instead of an integer index
+- it's faster to dereference the pointer than calculate the offset \
+    from the index each time
+- stackTop points to where the next value to be pushed will go
+- it is possible to run out of room on your stack resulting in "stack overflow"
+  - we could make this dynamic but for now, let's keep it static
+- small note: CONST 3 (a), CONST 1 (b), SUB (b = pop(), a = pop())
+- there is another family of bytecode architectures out there
+  - register-based
+  - with real registers, you don't have that maybe so you need to shuffle them around
+  - you still have a stack with register-based
+  - difference is instructions can read their inputs form anywhere in the stack
+  - and can store their outputs into specific stack slots
+- ex) var a = 1; var b = 2; var c = a + b;
+  - load $a, load $b, add, store $c (7 bytes)
+  - for instructions but in register based we could do
+  - add $a $b $c (4 bytes and fewer instructions)
+  - more complexity but no stack manipulation (pushing/popping)
+  - Lua 5.0 made this transition
+  - these are super nice but it's harder to write a compiler for so we will avoid
+  - also stack based in more known in literature/community
+  - good place to start :)
