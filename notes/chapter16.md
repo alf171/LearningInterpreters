@@ -1,0 +1,32 @@
+# Chapter 16 - Scanning On Demand
+
+- compiler has three phases: scanner, compiler, and virtual machine
+- slightly different from the jlox scanner but will be pretty similar
+- we want to allocate a big enough string to read the whole file
+- but we also don't know how large the file is until we read it
+- classic trick
+  - open file, fseek to end, ftell our current location, then rewind to beginning
+  - problem is these calls can fail
+- as scanner goes through user code, it tracks how far its gone
+  - start point marks the beginning of the current lexeme being scanned
+  - current points to the current char being looked at
+- in jlox, the scanner eagerly scanned the whole program and returned a List of tokens
+- in clox, this is challenging bc we would need a growable array to store tokens
+- we'd need to manage allocating and freeing tokens and the collection itself
+  - compiler only needs a couple tokens at a time though
+- simpler, scan a token until the compiler needs one
+- clox scanner will produce ERROR tokens instead of scanner in jlox throwing exception
+  - then the compiler can kick off error recovery before reporting the error
+- in jlox, each token stored the lexeme as its own separate little java string
+  - in c, this is hard due to ownership
+  - instead, we use the original source string as our char store
+- EOF token tells the compiler to stop asking for more tokens
+- how are we going to deny naming things reserved text
+  - we are going to use a trie
+  - stores a set of string
+  - then wraps them nicely for searching
+  - they are a deterministic finite automaton (DFA)
+  - also known as finite state machine or state machine
+  - DFA are more powerful than trees bec they can be arbitrary graphs
+  - DFA for numbers: start -> 0..9 (can call itself or end also)
+      -> . -> 0..9 (can call itself or end also) -> end
