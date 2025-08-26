@@ -25,7 +25,7 @@ static bool isAlpha(char c) {
 }
 
 static bool isDigit(char c) {
-    return c >= '0' && c <='9';
+    return c >= '0' && c <= '9';
 }
 
 static bool isAtEnd() {
@@ -43,7 +43,7 @@ static Token makeToken(TokenType type) {
 
 static Token errorToken(const char* message) {
     Token token;
-    token.type = TOKEN_EOF;
+    token.type = TOKEN_ERROR;
     token.start = message;
     token.length = (int)(strlen(message));
     token.line = scanner.line;
@@ -53,7 +53,7 @@ static Token errorToken(const char* message) {
 
 static char advance() {
     scanner.current++;
-    return scanner.start[-1];
+    return scanner.current[-1];
 }
 
 static char peek() {
@@ -92,8 +92,8 @@ static void skipWhitespace() {
 }
 
 static bool match(char expected) {
-    if (isAtEnd()) false;
-    if (*scanner.current != expected) false;
+    if (isAtEnd()) return false;
+    if (*scanner.current != expected) return false;
 
     scanner.current++;
     return true;
@@ -154,15 +154,15 @@ static TokenType identifierType() {
 }
 
 static Token identifier() {
-    while (isAlpha(peek()) || isAlpha(peek())) {
+    while (isAlpha(peek()) || isDigit(peek())) {
         advance();
     }
-    return makeToken(TOKEN_IDENTIFIER);
+    return makeToken(identifierType());
 }
 
 static Token number() {
     while (isDigit(peek())) {
-        advance;
+        advance();
     }
 
     if (peek() == '.' && isDigit(peekNext())) {
@@ -209,7 +209,7 @@ Token scanToken() {
             return makeToken(TOKEN_STAR);
         case '!':
             return makeToken(
-                match('=') ? TOKEN_BANG_EQUAL : TOKEN_EQUAL
+                match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG
             );
         case '=':
             return makeToken(
