@@ -1,2 +1,7 @@
-build/memory.o: memory.c common.h
+build/memory.o: memory.c common.h memory.h object.h value.h vm.h chunk.h
 common.h:
+memory.h:
+object.h:
+value.h:
+vm.h:
+chunk.h:

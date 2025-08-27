@@ -1,0 +1,51 @@
+# Chapter 19 - Strings
+
+- we can represent numbers, booleans, and nil
+- these values are immutable and small
+- too much for a single value even if we limit at 255 chars
+- we can dynamically allocate on the heap :)
+- values and objects
+  - heap for larger variable sized values and stack for small atomic ones leads to a two-level rep
+  - we'll have more things on the heap eventually
+  - strings, instance, function, etc
+  - call this representation obj
+- number: [ValueType type, padding, double as number]
+- obj: [ValueType type, padding, Obj* as obj ...-> (to heap) -> Obj]
+- not all objects are the same also
+- we could use another union to handle this but we can also use type punning
+  - also known as struct inheritance
+  - obj is sort of a state shared across all object types
+  - or a base class
+- Because ObjString is an Obj, it also needs the state all Objs share
+- It accomplishes that by having its first field be an Obj
+- this allows you to safety convert between
+  - type a and type b while still being able to fetch first field
+- define AS_STRING, AS_CSTRING
+  - AS_STRING returns ObjString on heap or ObjString pointer
+  - AS_CSTRING returns returns the chars array itself
+- concatenation
+  - let's add support for + on strings which results in concatenation
+- freeing objects
+  - we need to free strings when we pop them off the stack
+  - (vm stack) when we do things like add
+  - solution is a garbage collector which reclaims unused memory
+  - while the program is running
+  - simplest approach for this
+  - create a linked list that stores every Obj
+  - vm can traverse that list to find  objects that have been allocated on the heap
+  - we can check if the user's program or the VM stack still has reference to it
+  - use this to know if we should dealloc
+  - let's just use an intrusive list
+- the current GC cleans up the mess before exiting- the current GC cleans up the mess before exiting- the current GC cleans up the mess before exiting
+- but it doesn't  run while the VM is running
+- later on, we could write a prgoram which will have the vm eat more and more memory
+- we need a real gc to fix this
+- there is a way to have more efficient arrays `flexible array members`
+- python 2->3 string encoding changes
+- char[] versus char* is a way to reduce one pointer hop
+  - in a struct, this can be thought to be allocate on stack
+  - but in reality, it means the struct includes inline storage
+- string encoding is super messy
+  - many languages, ascii vs later unicode, unicode then had a combing char, UTF-8/16/32
+  - simple copmromise is always use UTF-8 and expose code-point api for further
+  - perl and swift do this
