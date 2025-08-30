@@ -1,8 +1,11 @@
 CompileFlags:
-  Remove:
-    - "-std=*"
-  Add:
-    - "-std=c11"
-    - "-x"
-    - c
-    - "-Iinclude"
+  Remove: ["-std=c++*", "-xc++*", "-xobjective-c++*", "-x", "c++*"]
+  Add: ["-std=c11", "-Iinclude"]
+
+If: '.*\.c$'
+CompileFlags:
+  Add: ["-xc"]
+
+If: '.*\.h$'
+CompileFlags:
+  Add: ["-xc-header"]
