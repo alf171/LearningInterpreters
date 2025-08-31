@@ -1,0 +1,84 @@
+# Chapter 20 - Hash Tables
+
+- before we add variables to our vm
+  - we need a way to look up a value given a variable's name
+- later, we'll need this for fields of an instance
+- hash tables are this struct
+- associates a set of keys with a set of values
+- each key, value pair is a entry in the table
+- if you add a new value for an existing key, it does a replace
+- constant time gets
+- imagine we have all lower case variables
+- we could do 27 buckets each for one char
+- but this only works with single char variables and what about naming conflicts
+- what if we do 8 chars instead
+  - results in 295,148 PB array
+  - almost every item would be empty which would be a waste off size
+- let's do a modulo of the size of the array to make our estimate more reasonable
+- char -> number -> modulo -> bucket
+- but, we start to get collisions now
+- 16 mod 8, 8 mod 8
+- the load factor refers to the likelihood of collisions
+- entries / buckets
+- we could resize like dynamic arrays
+  - instead of waiting until full like arrays, we resize on certain load factor
+- collision resolution
+  - birthday paradox
+  - pigeon hole principle also tells us we can never be sure of no collisions
+- separate chaining
+  - instead of each bucket containing one element, we let it contain a collection of them
+  - in particular, a linked list
+  - worst case, we become an unsorted list O(n)
+  - it's not a great fit for modern cpus
+  - pointers have a lot of overhead
+  - and memory gets scattered which is bad for caching
+- open addressing (or closed hashing)
+  - all entries live directly in the bucket array with one entry per bucket
+  - if there is a collision, we find a different bucket to use instead
+  - operations become slightly more complex as a result
+  - the process of finding available bucket is called probing
+  - order you examine is called probe sequence
+  - many small params to tweak as such small difference in fundamental data structs can be big
+  - we will implement the classic linear probing
+  - if entry is busy, we move onto next
+  - if we reach end, we wrap around
+  - pro: cache friendly, con: prone to cluster
+  - similar to separate chaining but the list of nodes is thread into the bucket itself
+  - it is tricky though because multiple lists can be intertwined
+  - similar but it actually also covers the case where entries that "belong" to a different og bucket
+- hash function has 3 goals
+  - deterministic
+    - same input => same output
+  - uniformly distributed
+    - wide array and evenly distributed to minimize collisions
+  - fast
+- FNV-1a hash alg will be used by clox
+- we will also compute the hash of objects when we create them
+- we already need to memcpy the string over O(n) so its a good time at creation
+- deleting from hashtables are a little complicated
+  - we could use the following algorithm
+  - get the hash, go to that element and keep moving until empty bucket or item
+  - however, other deletions could lead to gaps
+  - we'll use tombstoning to fix this -- replace deletions with special entry
+  - when we run into a tombstone, we keep iterating
+- should we treat tombstones as count towards capacity or not? they are in between
+- we consider tombstone full items because the risk of not would be infinite loop
+- when we bench mark doing all work in deletion instead of a lazy delete
+  - this approach is much more efficient than rearranging
+- small bug, findEntry uses == to compare equality
+- in reality, that does checks for the exact same string in memory
+  - i.e. different addresses would fail
+- we could do a char by char compare like previously used but this is slow 
+- string interning == create a collection of strings -- each string there is distinct
+- when interning a string, you look for a matching string in the collection
+  - otherwise, we need to add it to our collection
+- we'll use the hash table we implemented
+  - but use it more like a set by setting val to NIL
+- when copying a string, if we find it in intern list, we pass a reference to it handing ownership over
+- we've added some overhead when creating string to intern them
+- however, the equality operator is much quicker now
+- we can use it for tracking variables, instances, and other key-value pairs
+  - for dynamically typed languages this two are very important
+  - method calls and instance fields are looked up by name at runtime
+  - if equality is slow,  that means look up methods by name is slow
+  - if that's slow, everything in an OOP language is slow
