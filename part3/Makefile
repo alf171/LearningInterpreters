@@ -1,7 +1,7 @@
 # Makefile
 CC      := clang
 BIN     := clox
-SRC     := main.c debug.c chunk.c memory.c value.c vm.c compiler.c scanner.c object.c 
+SRC     := main.c debug.c chunk.c memory.c value.c vm.c compiler.c scanner.c object.c table.c
 OBJ     := $(SRC:%.c=build/%.o)
 
 CFLAGS  := -std=c11 -Wall -Wextra -Wno-unused-parameter -Iinclude

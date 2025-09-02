@@ -18,7 +18,6 @@ struct Obj {
 struct ObjString {
   Obj obj;
   int length;
-  // TODO: flexible array members -- can make this char[]
   char *chars;
   uint32_t hash;
 };

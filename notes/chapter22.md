@@ -1,0 +1,43 @@
+# Chapter 22 - Local Variables
+
+- much easier to implement local variables since they are late bound
+  - i.e. resolved after compile time
+- lexical scoping can help us however
+- how do C and java implement this
+  - they store local variables on the stack
+  - they use the native stack mechanisms support by the chip and OS
+  - slightly too low level but we can use our own stack
+- currently we can store temporaries (short lived blobs)
+- we can put our values along these temporaries as long as we don't cause interfer
+- performance win since we only need to incremenet stackTop pointer and freeing is like decrementing
+- when a block ends, our variables to pop off will be on top of stack
+- we can take advance that we can track down where in the stack we need to use to utilize indexing
+- recall in jlox, we used a chain of environments
+- here we use a flat list of all locals in scope
+  - they are order by their apperance
+  - locals will have a fix size of uint8_t max + 1
+  - zero will be our global scope -- one is first top level etc
+  - we use this idea to know where to discard variables until
+  - all we need to store for a `local` is depth and name type: `Token`
+  - we'll use a global variable for our compiler since it's far easier than passing it around
+- first thing we need is local scope
+  - this comes from function bodies and blocks
+  - for now, we'll start with blocks
+  - statement -> exprStmt | printStmt | block;
+  - block -> "{" delaration* "}";
+- okay so beginScope increased currenDepth and endScope decrements it
+- but currently our compiler assumes all variables are global
+- so we actually ust need to hook up th new scoping semantics to our code
+- both parseVariable and defineVariable need scope pased into them
+- okay so for local variables we do nothing just keep track through compiler
+- for global, we keep looking up in hashmap
+- we also want to prevent naming things
+- we want to prevent assignment twice at local scope
+- but you are allowed to reassign at different scopes
+  - this is called shadowing
+- how do we resolve a local?
+  - well we walk the current scope looking for the variable, we keep moving down looking if we cant find
+  - if we can't find, we return -1
+  - if we can't find it, we use this -1 to indicate to look in global registry
+- trend we will see over time for performance, pulling work forward into the compiler
+  - makes it so we don't have do to everything at runtime (in the vm)

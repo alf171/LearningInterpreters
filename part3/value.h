@@ -3,52 +3,52 @@
 
 #include "common.h"
 
-typedef struct Obj Obj; 
+typedef struct Obj Obj;
 typedef struct ObjString ObjString;
 
 typedef enum {
-    VAL_BOOL,
-    VAL_NIL,
-    VAL_NUMBER,
-    VAL_OBJ,
+  VAL_BOOL,
+  VAL_NIL,
+  VAL_NUMBER,
+  VAL_OBJ,
 } ValueType;
 
-#define IS_BOOL(value) ((value).type == VAL_BOOL)
-#define IS_NIL(value) ((value).type == VAL_NIL)
-#define IS_NUMBER(value) ((value).type == VAL_NUMBER)
-#define IS_OBJ(value) ((value).type == VAL_OBJ)
-#define IS_STRING(value) isObjType(value, OBJ_STRING)
+#define IS_BOOL(v) ((v).type == VAL_BOOL)
+#define IS_NIL(v) ((v).type == VAL_NIL)
+#define IS_NUMBER(v) ((v).type == VAL_NUMBER)
+#define IS_OBJ(v) ((v).type == VAL_OBJ)
+#define IS_STRING(v) isObjType(v, OBJ_STRING)
 
 #define AS_BOOL(value) ((value).as.boolean)
 #define AS_NUMBER(value) ((value).as.number)
 #define AS_OBJ(value) ((value).as.obj)
-#define AS_STRING(value) ((ObjString*)AS_OBJ(value))
-#define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
+#define AS_STRING(value) ((ObjString *)AS_OBJ(value))
+#define AS_CSTRING(value) (((ObjString *)AS_OBJ(value))->chars)
 
-#define BOOL_VAL(value) ((Value){VAL_BOOL, {.boolean = value}})
+#define BOOL_VAL(b) ((Value){VAL_BOOL, {.boolean = b}})
 #define NIL_VAL ((Value){VAL_NIL, {.number = 0}})
-#define NUMBER_VAL(value) ((Value){VAL_NUMBER, {.number = 0}})
-#define OBJ_VAL(value) ((Value){VAL_OBJ, {.obj = (Obj*)value}})
+#define NUMBER_VAL(n) ((Value){VAL_NUMBER, {.number = n}})
+#define OBJ_VAL(objPtr) ((Value){VAL_OBJ, {.obj = (Obj *)objPtr}})
 
 typedef struct {
-    ValueType type;
-    union {
-        bool boolean;
-        double number;
-        Obj* obj;
-    } as;
+  ValueType type;
+  union {
+    bool boolean;
+    double number;
+    Obj *obj;
+  } as;
 } Value;
 
 typedef struct {
-    int capacity;
-    int count;
-    Value* values;
+  int capacity;
+  int count;
+  Value *values;
 } ValueArray;
 
 bool valuesEqual(Value a, Value b);
-void initValueArray(ValueArray* array);
-void writeValueArray(ValueArray* array, Value value);
-void freeValueArray(ValueArray* array);
+void initValueArray(ValueArray *array);
+void writeValueArray(ValueArray *array, Value value);
+void freeValueArray(ValueArray *array);
 void printValue(Value value);
 
 #endif
