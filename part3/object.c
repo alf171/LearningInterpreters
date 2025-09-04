@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "chunk.h"
 #include "memory.h"
 #include "object.h"
 #include "table.h"
@@ -28,7 +29,7 @@ static Obj *allocateObject(size_t size, ObjType type) {
 }
 
 #define ALLOCATE_OBJ(type, objectType)                                         \
-  (ObjString *)allocateObject(sizeof(type), objectType)
+  (type *)allocateObject(sizeof(type), objectType)
 
 static ObjString *allocateString(char *chars, int length, uint32_t hash) {
   ObjString *string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
@@ -41,12 +42,30 @@ static ObjString *allocateString(char *chars, int length, uint32_t hash) {
   return string;
 }
 
+static void printFunction(ObjFunction *function) {
+  printf("<fn %s>", function->name->chars);
+}
+
 void printObject(Value value) {
   switch (OBJ_TYPE(value)) {
-  case OBJ_STRING:
+  case OBJ_FUNCTION: {
+    printFunction(AS_FUNCTION(value));
+    break;
+  }
+  case OBJ_STRING: {
     printf("%s", AS_CSTRING(value));
     break;
   }
+  }
+}
+
+ObjFunction *newFunction() {
+  ObjFunction *function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+
+  function->arity = 0;
+  function->name = NULL;
+  initChunk(&function->chunk);
+  return function;
 }
 
 /**

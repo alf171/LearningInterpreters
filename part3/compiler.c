@@ -259,7 +259,7 @@ static void initCompiler(Compiler *compiler) {
 
 static void or_(bool canAssign) {
   int elseJump = emitJump(OP_JUMP_IF_FALSE);
-  int endJump = emitJump(OP_TRUE);
+  int endJump = emitJump(OP_JUMP);
 
   patchJump(elseJump);
   emitByte(OP_POP);
@@ -563,6 +563,66 @@ static void block() {
   consume(TOKEN_RIGHT_BRACE, "Expect '}' after block");
 }
 
+static void emitLoop(int loopStart) {
+  emitByte(OP_LOOP);
+
+  int offset = currentChunk()->count - loopStart + 2;
+  if (offset > UINT16_MAX) {
+    error("Loop body too large");
+  }
+  emitByte((offset >> 8) & 0xff);
+  emitByte(offset & 0xff);
+}
+
+static void forStatement() {
+  beginScope();
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after if");
+  if (match(TOKEN_SEMICOLON)) {
+    // no initializer
+  } else if (match(TOKEN_VAR)) {
+    varDecleration();
+  } else {
+    expressionStatement();
+  }
+
+  int loopStart = currentChunk()->count;
+
+  int exitJump = -1;
+  if (!check(TOKEN_SEMICOLON)) {
+    expression();
+    exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+  }
+  consume(TOKEN_SEMICOLON, "Expect '; after loop condition");
+
+  // i++
+  if (!check(TOKEN_RIGHT_PAREN)) {
+    int bodyJump = emitJump(OP_JUMP);
+
+    int incrementStart = currentChunk()->count;
+    expression();
+    emitByte(OP_POP);
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses");
+
+    emitLoop(loopStart);
+    loopStart = incrementStart;
+    patchJump(bodyJump);
+  } else {
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clause");
+  }
+
+  statement();
+
+  emitLoop(loopStart);
+
+  if (exitJump != -1) {
+    patchJump(exitJump);
+    emitByte(OP_POP);
+  }
+
+  endScope();
+}
+
 static void ifStatement() {
   consume(TOKEN_LEFT_PAREN, "Expect '(' after if");
   expression();
@@ -584,11 +644,33 @@ static void ifStatement() {
   patchJump(elseJump);
 }
 
+static void whileStatement() {
+  int loopStart = currentChunk()->count;
+
+  consume(TOKEN_LEFT_PAREN, "Expect '(' after while");
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition");
+
+  int exitJump = emitJump(OP_JUMP_IF_FALSE);
+
+  emitByte(OP_POP);
+  statement();
+
+  emitLoop(loopStart);
+
+  patchJump(exitJump);
+  emitByte(OP_POP);
+}
+
 static void statement() {
   if (match(TOKEN_PRINT)) {
     printStatement();
   } else if (match(TOKEN_IF)) {
     ifStatement();
+  } else if (match(TOKEN_FOR)) {
+    forStatement();
+  } else if (match(TOKEN_WHILE)) {
+    whileStatement();
   } else if (match(TOKEN_LEFT_BRACE)) {
     beginScope();
     block();

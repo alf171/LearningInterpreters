@@ -44,3 +44,16 @@ static int emitJump(uint8_t instruction) {
     - left: `OP_JUMP_IF_FALSE -> OP_POP or OP_JUMP -> CONTINUE`
   - implementing ORs and ANDs like this add more overhead since we need more instructions
   - but this is a nice excercise of building things from smaller pieces
+- while loop
+  - essentially, we just jump backwards so that we can execute code more than once
+- next, we will write a for loop using just jump and loop instruction which we have added
+- it is a little complication. the components are
+    1. initializer clause
+    2. condition expression
+      - `OP_JUMP_IF FALSE`, `OP_POP`, `OP_JUMP`
+    3. increment expression
+      - `OP_POP`, `OP_LOOP`
+    4. body statement
+      - `OP_LOOP`, `OP_POP`, continue...
+- offically, our vm is turing complete
+- goto is thought to be evil but why -- some legacy reason here -- famous dyktra paper about it
