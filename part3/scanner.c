@@ -17,7 +17,7 @@ Scanner scanner;
 void initScanner(const char *source) {
   scanner.start = source;
   scanner.current = source;
-  scanner.line = 0;
+  scanner.line = 1;
 }
 
 static bool isAlpha(char c) {
@@ -98,13 +98,15 @@ static bool match(char expected) {
 
 static Token string() {
   while (peek() != '"' && !isAtEnd()) {
-    if (peek() == '\n')
+    if (peek() == '\n') {
       scanner.line++;
+    }
     advance();
   }
 
-  if (isAtEnd())
+  if (isAtEnd()) {
     return errorToken("Unterminated String");
+  }
 
   advance();
   return makeToken(TOKEN_STRING);

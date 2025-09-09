@@ -1,5 +1,6 @@
-build/value.o: value.c common.h memory.h object.h value.h
+build/value.o: value.c common.h memory.h object.h chunk.h value.h
 common.h:
 memory.h:
 object.h:
+chunk.h:
 value.h:

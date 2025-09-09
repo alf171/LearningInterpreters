@@ -13,3 +13,70 @@
 - since function are first class, they will have to be objects
   - arity field stores the number of parameters expected
   - we also store a chunk and function name
+- our function always assumes it compiling a single chunk
+- with each function's code living in a new chunk, compiler needs to swap between
+- the top level code also needs to be a chunk (place into some automatic fun)
+  - we can simplify the compiler and the vm placing in top level fun
+  - the vm is always within some body and vm always runs code by running come fun
+- instead of pointing directly to a chunk, the compiler will reference a function object
+- the current chunk is always the one owned by the function we are in
+- previously, the VM passed a chunk to the compiler which filled it with code
+- instead, the compiler, will create and a function
+  - that contains a compiled top level code
+  - i.e create functions at compile time
+- locals array keeps track of which slots are associated with which local/tmp variables
+  - we will claim stack slot 0 for the VMs internal use
+  - we also give it an empty name so the user can't reference it
+- Call Frames
+  - two problems we need to worry about
+  - Allocating local variables
+    - how does this work when variables are scattered across multiple functions
+    - each function having its own dedicated slots on vm stack >> Early languages
+      - waste memory since majority of time functions aren't being used
+    - what about recurssion also? multiple ins within the same fun
+      - each has its own local variables and temporaries
+    - however, the same function call but at different points could require different slots
+    - solution, beginning of each function call, vm records location of the first slot
+    - that function's own local begins there
+    - at compile time, we calcualte the relative slots
+    - it's as if the function gets a window of frame within the stack
+      - the position of the call frame is determine at runtme
+      - the int is called frame pointer
+  - Return addresses
+    - right now, we work our way through the instruction stream by incrementing ip
+    - around control, we manipulate ip
+    - when we call a function, we set the ip to point to the function instruction in fn chunk
+    - what about when the function is done?
+    - the vm needs to return to the chunk where the function was called from
+    - for each function call, we need to track where we jump back to when the call completes
+    - called a return address because it's the address the vm returns to after the call
+    - thanks to recursion, there may be multiple return addresses for a single fun
+    - so we need to track where each function locals begins and where the caller should resume
+  - a CallFrame represents a single ongoing function call
+    - slots = points into the VMs value stack at the first slot that this function can use
+    - the callee frame has its own ip, when we return from a function
+      - vm jumps to the ip of thec aller's CallFrame and resumes from there
+    - each time a function is called, we create a call frame
+    - we'll use stack since that's faster -- we also have stack semantics first() -> second()
+- reminder variables have two stages
+  - ensures you can't access a variable's value inside the variable's initialization
+  - since the variable does have a value associated yet
+  - we actually need this to support recursive local functions
+  - to support this, we mark the function declartion's variable initialized
+  - we do this when we compile the name
+- we are going to create a separate compiler for each function being compiled
+- when we start compiling a function decl, we create a new compiler on c stack and init it
+- as we compile the body, all of the functions that emit byte code write
+- they write into the chunk owned by the new compiler's function
+- when we reach end of function body, we get a new function obj from endCompiler()
+- we need to keep track of nested compilers tho
+  - we will use a linked list of compilers
+- function calls
+- imagine we have: print 4 + sum(5, 6, 7) stack: [4, sum, 5, 6, 7]
+  - we need a call frame initialized with the function being called and a region of stack slots
+  - our call frame will actually have a window into the same stack so we can create this
+  - makes it easy to bind arguments to parameters
+  - stackTop - argCount - 1 is our `frame->slots` start
+- the code does assume that a caller passes in the same number of params as declared
+- aborting doesn't really help users debug what's wrong
+  - ideally, they want a stack trace telling them what's wrong + where it died

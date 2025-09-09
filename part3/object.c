@@ -43,6 +43,10 @@ static ObjString *allocateString(char *chars, int length, uint32_t hash) {
 }
 
 static void printFunction(ObjFunction *function) {
+  if (function->name == NULL) {
+    printf("<script>");
+    return;
+  }
   printf("<fn %s>", function->name->chars);
 }
 
