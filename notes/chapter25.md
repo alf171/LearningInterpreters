@@ -80,3 +80,19 @@
 - the code does assume that a caller passes in the same number of params as declared
 - aborting doesn't really help users debug what's wrong
   - ideally, they want a stack trace telling them what's wrong + where it died
+- `OP_RETURN` has been a little hacky so far
+- when a function returns a value, that value will be on the top of the stack
+- but what if the function has no return value -- we need the concept of nil
+- okay, we can return implicit null but compiler needs support for return too
+- native functions
+  - how a programming world touches the outside world
+  - if we want to read user input, access file system, etc need c to expose
+  - grinding through os operations might not be very educational
+  - native functions are unique because they don't push a `CallFrame`
+  - they also have not byte code
+  - native fn takes the argumnet count and a pointer to first arg on stack
+  - once, it is done, returns value
+  - this also makes native functions fast
+  - it would also be nice if callers could define their own native functions from within lox
+    - foreign function interfaces provide this
+  - we will write a helper for this

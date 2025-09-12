@@ -10,6 +10,7 @@
 typedef enum {
   OBJ_STRING,
   OBJ_FUNCTION,
+  OBJ_NATIVE,
 } ObjType;
 
 struct Obj {
@@ -24,6 +25,13 @@ typedef struct {
   ObjString *name;
 } ObjFunction;
 
+typedef Value (*NativeFn)(int argCount, Value *args);
+
+typedef struct {
+  Obj obj;
+  NativeFn function;
+} ObjNative;
+
 struct ObjString {
   Obj obj;
   int length;
@@ -34,6 +42,7 @@ struct ObjString {
 ObjString *copyString(const char *chars, int length);
 void printObject(Value value);
 ObjFunction *newFunction();
+ObjNative *newNative(NativeFn function);
 ObjString *takeString(char *chars, int length);
 
 static inline bool isObjType(Value value, ObjType type) {

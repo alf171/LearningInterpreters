@@ -5,3 +5,5 @@
     4. 21/ support variable reassignment results in duplicate constants. fix this
     5. 23/ support switch statements -- very similar to if or for
     6. 23/ support continue -- jump to the top of the nearest enclosing loop skipping rest of body
+    7. 24/ we spend most of our time touching ip -- can we keep it in a native cpu register
+    8. 24/ add an arity check to native functions
