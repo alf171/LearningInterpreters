@@ -1,59 +1,98 @@
-# Chapter 23 - Jumping Back and Forth
+# Chapteer 24 - Calls and Functions
 
-- we can finally add control flow to our VM
-- for jlox, we use java's control flow
-- for a VM, we need some sort of byte code representation to handle this
-- flow has to do with the path in which our vm runs
-- in jlox, the locus of attnetion was implicit based on which ast nodes we are running
-- in clox, it is more explicit since we track with our ip
-  - seems like all we need to do is mutate our ip
-- if (a) print(b);
-  - if a is true, we run the next instruction, but if false, we skip over it
-  - else statement adds some complexity but anyway
-- at the end of the day, the compiler lowers down to raw jumps
-  - this is actually goto statements
-- add compiler support for if statemnt
-- keep the condition value on the top of stack
-- emit a new instruction `OP_JUMP_IF_FALSE`
-  - has an operaound to decide how much to jump
-- but we dont know exactly how much do jump do we
-- backpatching
-  - submit a jump with a placeholder offset
-  - next, we compile how far we go
-  - then we recalculate get our jump location
-
-```{c}
-static int emitJump(uint8_t instruction) {
-  emitByte(instruction);
-  emitByte(0xff);
-  emitByte(0xff);
-  return currentChunk()->count - 2;
-}
-```
-
-- 16 bit offset lets us jump over up to 65,536 bytes of code
-- we then need to calculate offset to figure out where we should've really jumped to
-- to support else, we could just add a statement if we see else
-- problem is, the if case would then go into the else
-- so that needs a second jump for that
-- Logical operators
-  - and and or are just another binary operators like +/-
-  - but since they short circuit they actual behave more like control flow
-  - little if/else variants if you think about it
-  - OR is slightly more complicated short circuit
-    - left: `OP_JUMP_IF_FALSE -> OP_POP or OP_JUMP -> CONTINUE`
-  - implementing ORs and ANDs like this add more overhead since we need more instructions
-  - but this is a nice excercise of building things from smaller pieces
-- while loop
-  - essentially, we just jump backwards so that we can execute code more than once
-- next, we will write a for loop using just jump and loop instruction which we have added
-- it is a little complication. the components are
-    1. initializer clause
-    2. condition expression
-      - `OP_JUMP_IF FALSE`, `OP_POP`, `OP_JUMP`
-    3. increment expression
-      - `OP_POP`, `OP_LOOP`
-    4. body statement
-      - `OP_LOOP`, `OP_POP`, continue...
-- offically, our vm is turing complete
-- goto is thought to be evil but why -- some legacy reason here -- famous dyktra paper about it
+- the most interesting change we will have to make to support functions and calls
+- is to our stack
+- we already have a stack for local variables and temporaries
+- however, we have notion of a call stack
+- let's start with representing functions from a vm standpoint
+  - a function is abod that can be executed
+  - we could compile everything into a monolith chunk
+  - each fn would point to first instruction
+  - this is how native code works but we will abstract
+  - lets give each function a chunk
+- since function are first class, they will have to be objects
+  - arity field stores the number of parameters expected
+  - we also store a chunk and function name
+- our function always assumes it compiling a single chunk
+- with each function's code living in a new chunk, compiler needs to swap between
+- the top level code also needs to be a chunk (place into some automatic fun)
+  - we can simplify the compiler and the vm placing in top level fun
+  - the vm is always within some body and vm always runs code by running come fun
+- instead of pointing directly to a chunk, the compiler will reference a function object
+- the current chunk is always the one owned by the function we are in
+- previously, the VM passed a chunk to the compiler which filled it with code
+- instead, the compiler, will create and a function
+  - that contains a compiled top level code
+  - i.e create functions at compile time
+- locals array keeps track of which slots are associated with which local/tmp variables
+  - we will claim stack slot 0 for the VMs internal use
+  - we also give it an empty name so the user can't reference it
+- Call Frames
+  - two problems we need to worry about
+  - Allocating local variables
+    - how does this work when variables are scattered across multiple functions
+    - each function having its own dedicated slots on vm stack >> Early languages
+      - waste memory since majority of time functions aren't being used
+    - what about recurssion also? multiple ins within the same fun
+      - each has its own local variables and temporaries
+    - however, the same function call but at different points could require different slots
+    - solution, beginning of each function call, vm records location of the first slot
+    - that function's own local begins there
+    - at compile time, we calcualte the relative slots
+    - it's as if the function gets a window of frame within the stack
+      - the position of the call frame is determine at runtme
+      - the int is called frame pointer
+  - Return addresses
+    - right now, we work our way through the instruction stream by incrementing ip
+    - around control, we manipulate ip
+    - when we call a function, we set the ip to point to the function instruction in fn chunk
+    - what about when the function is done?
+    - the vm needs to return to the chunk where the function was called from
+    - for each function call, we need to track where we jump back to when the call completes
+    - called a return address because it's the address the vm returns to after the call
+    - thanks to recursion, there may be multiple return addresses for a single fun
+    - so we need to track where each function locals begins and where the caller should resume
+  - a CallFrame represents a single ongoing function call
+    - slots = points into the VMs value stack at the first slot that this function can use
+    - the callee frame has its own ip, when we return from a function
+      - vm jumps to the ip of thec aller's CallFrame and resumes from there
+    - each time a function is called, we create a call frame
+    - we'll use stack since that's faster -- we also have stack semantics first() -> second()
+- reminder variables have two stages
+  - ensures you can't access a variable's value inside the variable's initialization
+  - since the variable does have a value associated yet
+  - we actually need this to support recursive local functions
+  - to support this, we mark the function declartion's variable initialized
+  - we do this when we compile the name
+- we are going to create a separate compiler for each function being compiled
+- when we start compiling a function decl, we create a new compiler on c stack and init it
+- as we compile the body, all of the functions that emit byte code write
+- they write into the chunk owned by the new compiler's function
+- when we reach end of function body, we get a new function obj from endCompiler()
+- we need to keep track of nested compilers tho
+  - we will use a linked list of compilers
+- function calls
+- imagine we have: print 4 + sum(5, 6, 7) stack: [4, sum, 5, 6, 7]
+  - we need a call frame initialized with the function being called and a region of stack slots
+  - our call frame will actually have a window into the same stack so we can create this
+  - makes it easy to bind arguments to parameters
+  - stackTop - argCount - 1 is our `frame->slots` start
+- the code does assume that a caller passes in the same number of params as declared
+- aborting doesn't really help users debug what's wrong
+  - ideally, they want a stack trace telling them what's wrong + where it died
+- `OP_RETURN` has been a little hacky so far
+- when a function returns a value, that value will be on the top of the stack
+- but what if the function has no return value -- we need the concept of nil
+- okay, we can return implicit null but compiler needs support for return too
+- native functions
+  - how a programming world touches the outside world
+  - if we want to read user input, access file system, etc need c to expose
+  - grinding through os operations might not be very educational
+  - native functions are unique because they don't push a `CallFrame`
+  - they also have not byte code
+  - native fn takes the argumnet count and a pointer to first arg on stack
+  - once, it is done, returns value
+  - this also makes native functions fast
+  - it would also be nice if callers could define their own native functions from within lox
+    - foreign function interfaces provide this
+  - we will write a helper for this

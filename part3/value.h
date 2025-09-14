@@ -17,17 +17,10 @@ typedef enum {
 #define IS_NIL(v) ((v).type == VAL_NIL)
 #define IS_NUMBER(v) ((v).type == VAL_NUMBER)
 #define IS_OBJ(v) ((v).type == VAL_OBJ)
-#define IS_FUNCTION(v) isObjType(v, OBJ_FUNCTION)
-#define IS_NATIVE(v) isObjType(v, OBJ_NATIVE)
-#define IS_STRING(v) isObjType(v, OBJ_STRING)
 
 #define AS_BOOL(value) ((value).as.boolean)
 #define AS_NUMBER(value) ((value).as.number)
 #define AS_OBJ(value) ((value).as.obj)
-#define AS_FUNCTION(value) ((ObjFunction *)AS_OBJ(value))
-#define AS_NATIVE(value) (((ObjNative *)AS_OBJ(value))->function)
-#define AS_STRING(value) ((ObjString *)AS_OBJ(value))
-#define AS_CSTRING(value) (((ObjString *)AS_OBJ(value))->chars)
 
 #define BOOL_VAL(b) ((Value){VAL_BOOL, {.boolean = b}})
 #define NIL_VAL ((Value){VAL_NIL, {.number = 0}})

@@ -1,5 +1,6 @@
-build/debug.o: debug.c chunk.h common.h value.h debug.h
+build/debug.o: debug.c chunk.h common.h value.h debug.h object.h
 chunk.h:
 common.h:
 value.h:
 debug.h:
+object.h:

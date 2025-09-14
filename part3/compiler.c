@@ -47,7 +47,13 @@ typedef struct {
 typedef struct {
   Token name;
   int depth;
+  bool isCaptured;
 } Local;
+
+typedef struct {
+  uint8_t index;
+  bool isLocal;
+} Upvalue;
 
 typedef enum { TYPE_FUNCTION, TYPE_SCRIPT } FunctionType;
 
@@ -58,6 +64,7 @@ typedef struct Compiler {
 
   Local locals[UINT8_COUNT];
   int localCount;
+  Upvalue upvalues[UINT8_COUNT];
   int scopeDepth;
 } Compiler;
 
@@ -117,6 +124,7 @@ static void addLocal(Token name) {
   Local *local = &current->locals[current->localCount++];
   local->name = name;
   local->depth = -1;
+  local->isCaptured = false;
 }
 
 static bool identifiersEqual(Token *a, Token *b) {
@@ -161,6 +169,7 @@ static void markInitialized() {
   if (current->scopeDepth == 0) {
     return;
   }
+
   current->locals[current->localCount - 1].depth = current->scopeDepth;
 }
 
@@ -283,6 +292,7 @@ static void initCompiler(Compiler *compiler, FunctionType type) {
 
   Local *local = &current->locals[current->localCount++];
   local->depth = 0;
+  local->isCaptured = false;
   local->name.start = "";
   local->name.length = 0;
 }
@@ -345,48 +355,48 @@ static void binary(bool canAssign) {
   parsePrecedence((Precedence)(rule.precedence + 1));
 
   switch (operatorType) {
-  case TOKEN_BANG_EQUAL: {
-    emitBytes(OP_EQUAL, OP_NOT);
-    break;
-  }
-  case TOKEN_EQUAL_EQUAL: {
-    emitByte(OP_EQUAL);
-    break;
-  }
-  case TOKEN_GREATER: {
-    emitByte(OP_GREATER);
-    break;
-  }
-  case TOKEN_GREATER_EQUAL: {
-    emitBytes(OP_LESS, OP_NOT);
-    break;
-  }
-  case TOKEN_LESS: {
-    emitByte(OP_LESS);
-    break;
-  }
-  case TOKEN_LESS_EQUAL: {
-    emitBytes(OP_GREATER, OP_NOT);
-    break;
-  }
-  case TOKEN_MINUS: {
-    emitByte(OP_SUBTRACT);
-    break;
-  }
-  case TOKEN_PLUS: {
-    emitByte(OP_ADD);
-    break;
-  }
-  case TOKEN_STAR: {
-    emitByte(OP_MULTIPLY);
-    break;
-  }
-  case TOKEN_SLASH: {
-    emitByte(OP_DIVIDE);
-    break;
-  }
-  default:
-    return; // not reachable
+    case TOKEN_BANG_EQUAL: {
+      emitBytes(OP_EQUAL, OP_NOT);
+      break;
+    }
+    case TOKEN_EQUAL_EQUAL: {
+      emitByte(OP_EQUAL);
+      break;
+    }
+    case TOKEN_GREATER: {
+      emitByte(OP_GREATER);
+      break;
+    }
+    case TOKEN_GREATER_EQUAL: {
+      emitBytes(OP_LESS, OP_NOT);
+      break;
+    }
+    case TOKEN_LESS: {
+      emitByte(OP_LESS);
+      break;
+    }
+    case TOKEN_LESS_EQUAL: {
+      emitBytes(OP_GREATER, OP_NOT);
+      break;
+    }
+    case TOKEN_MINUS: {
+      emitByte(OP_SUBTRACT);
+      break;
+    }
+    case TOKEN_PLUS: {
+      emitByte(OP_ADD);
+      break;
+    }
+    case TOKEN_STAR: {
+      emitByte(OP_MULTIPLY);
+      break;
+    }
+    case TOKEN_SLASH: {
+      emitByte(OP_DIVIDE);
+      break;
+    }
+    default:
+      return; // not reachable
   }
 }
 
@@ -396,30 +406,30 @@ static void unary(bool canAssign) {
   parsePrecedence(PREC_UNARY);
 
   switch (operatorType) {
-  case TOKEN_BANG:
-    emitByte(OP_NOT);
-    break;
-  case TOKEN_MINUS:
-    emitByte(OP_NEGATE);
-    break;
-  default:
-    return;
+    case TOKEN_BANG:
+      emitByte(OP_NOT);
+      break;
+    case TOKEN_MINUS:
+      emitByte(OP_NEGATE);
+      break;
+    default:
+      return;
   }
 }
 
 static void literal(bool canAssign) {
   switch (parser.previous.type) {
-  case TOKEN_FALSE:
-    emitByte(OP_FALSE);
-    break;
-  case TOKEN_NIL:
-    emitByte(OP_NIL);
-    break;
-  case TOKEN_TRUE:
-    emitByte(OP_TRUE);
-    break;
-  default:
-    return; // unreachable
+    case TOKEN_FALSE:
+      emitByte(OP_FALSE);
+      break;
+    case TOKEN_NIL:
+      emitByte(OP_NIL);
+      break;
+    case TOKEN_TRUE:
+      emitByte(OP_TRUE);
+      break;
+    default:
+      return; // unreachable
   }
 }
 
@@ -431,6 +441,7 @@ static void string(bool canAssign) {
 static int resolveLocal(Compiler *compiler, Token *name) {
   printf("[resolveLocal] find '%.*s' (locals=%d, depth=%d)\n", name->length,
          name->start, compiler->localCount, current->scopeDepth);
+
   for (int i = compiler->localCount - 1; i >= 0; i--) {
     Local *local = &compiler->locals[i];
     printf("  [%d] '%.*s' depth=%d\n", i, local->name.length, local->name.start,
@@ -446,25 +457,67 @@ static int resolveLocal(Compiler *compiler, Token *name) {
   return -1;
 }
 
-static void namedVariable(Token name, bool canAssign) {
-  uint8_t getOp, setOp, operand;
-  int slot = resolveLocal(current, &name);
+static int addUpvalue(Compiler *compiler, uint8_t index, bool isLocal) {
+  int upvalueCount = compiler->function->upvalueCount;
 
-  if (slot != -1) {
+  for (int i = 0; i < upvalueCount; i++) {
+    Upvalue *upvalue = &compiler->upvalues[i];
+    if (upvalue->index == index && upvalue->isLocal == isLocal) {
+      return i;
+    }
+  }
+
+  if (upvalueCount == UINT8_COUNT) {
+    error("Too many closure variables in function");
+    return 0;
+  }
+
+  compiler->upvalues[upvalueCount].isLocal = isLocal;
+  compiler->upvalues[upvalueCount].index = index;
+  return compiler->function->upvalueCount++;
+}
+
+static int resolveUpvalue(Compiler *compiler, Token *name) {
+  if (compiler->enclosing == NULL) {
+    return -1;
+  }
+
+  int local = resolveLocal(compiler->enclosing, name);
+  if (local != -1) {
+    compiler->enclosing->locals[local].isCaptured = true;
+    return addUpvalue(compiler, (uint8_t)local, true);
+  }
+
+  int upvalue = resolveUpvalue(compiler->enclosing, false);
+  if (upvalue != -1) {
+    return addUpvalue(compiler, (uint8_t)upvalue, false);
+  }
+
+  return -1;
+}
+
+static void namedVariable(Token name, bool canAssign) {
+  uint8_t getOp, setOp;
+  int arg = resolveLocal(current, &name);
+
+  if (arg != -1) {
     getOp = OP_GET_LOCAL;
     setOp = OP_SET_LOCAL;
-    operand = (uint8_t)slot;
+    // operand = (uint8_t)arg;
+  } else if ((arg = resolveUpvalue(current, &name)) != -1) {
+    getOp = OP_GET_UPVALUE;
+    setOp = OP_SET_UPVALUE;
   } else {
-    slot = identifierConstant(&name);
+    arg = identifierConstant(&name);
     getOp = OP_GET_GLOBAL;
     setOp = OP_SET_GLOBAL;
-    operand = slot;
   }
+
   if (canAssign && match(TOKEN_EQUAL)) {
     expression();
-    emitBytes(setOp, operand);
+    emitBytes(setOp, arg);
   } else {
-    emitBytes(getOp, operand);
+    emitBytes(getOp, arg);
   }
 }
 
@@ -576,19 +629,19 @@ static void synchronize() {
     }
 
     switch (parser.current.type) {
-    case TOKEN_CLASS:
-    case TOKEN_FUN:
-    case TOKEN_VAR:
-    case TOKEN_FOR:
-    case TOKEN_IF:
-    case TOKEN_WHILE:
-    case TOKEN_PRINT:
-    case TOKEN_RETURN:
-      return;
+      case TOKEN_CLASS:
+      case TOKEN_FUN:
+      case TOKEN_VAR:
+      case TOKEN_FOR:
+      case TOKEN_IF:
+      case TOKEN_WHILE:
+      case TOKEN_PRINT:
+      case TOKEN_RETURN:
+        return;
 
-    default:
-        // Do nothing
-        ;
+      default:
+          // Do nothing
+          ;
     }
     advance();
   }
@@ -601,7 +654,11 @@ static void endScope() {
 
   while (current->localCount > 0 &&
          current->locals[current->localCount - 1].depth > current->scopeDepth) {
-    emitByte(OP_POP);
+    if (current->locals[current->localCount - 1].isCaptured) {
+      emitByte(OP_CLOSE_UPVALUE);
+    } else {
+      emitByte(OP_POP);
+    }
     current->localCount--;
   }
 }
@@ -641,7 +698,12 @@ static void function(FunctionType type) {
   block();
 
   ObjFunction *function = endCompiler();
-  emitBytes(OP_CONSTANT, makeConstant(OBJ_VAL(function)));
+  emitBytes(OP_CLOSURE, makeConstant(OBJ_VAL(function)));
+
+  for (int i = 0; i < function->upvalueCount; i++) {
+    emitByte(compiler.upvalues[i].isLocal ? 1 : 0);
+    emitByte(compiler.upvalues[i].index);
+  }
 }
 
 static void emitLoop(int loopStart) {
