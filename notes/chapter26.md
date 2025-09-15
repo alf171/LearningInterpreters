@@ -1,0 +1,162 @@
+# Chapter 26 - Garbage Collection
+
+- high level = human gives abstract goals and machine figures out how to get there
+- dynamic memory allocation is a prefect candidate for automation
+- lox frees memory on behalf of the user
+- vm allocates memory for you
+- lox provides the illusion that the computer has infinite memory
+  - behind the scenes, we will reclaim memory = garbage collect
+  - in order to fuel this illusion
+- reachability
+  - computers make coservative approximations guessing what memory to alloc/dealloc
+  - consider a piece of memory to still be in use if it could possibly be read in future
+- there are conservative GCs and precise GCs
+  - any piece of memory to be a pointer if the value in there looks like an address
+  - precise knows exactly what words in memory are pointers and which are others
+- a value is reachable if there is some way for the user program to reference it
+- roots = any object that the VM can reach directly without going through a reference
+- other values can be fetching by reference of another object
+  - fields on instances are a good example
+- indicutive definition of reachabililty
+  - all roots are reachable
+  - any object referred to from a reachable object is itself reachable
+- algo
+  1. starting with the roots, traverse through object references to find S \in reachable
+  2. free all objects not in that set
+- mark-sweep garbage collection
+  - lisp was first to manage memory
+  - when program ran out, it would go back and find unused storage to reclaim
+  - the first algo was mark-and-sweep or mark-sweep
+  - step 1: Marking
+    - start with the root and traverse
+    - each time we visit an object, we mark it somehow
+  - step 2: sweep
+    - once the mark phase is done, every reachable object on the heap is marked
+    - that means any unmarked objec in the heap is ripe for reclamation
+- how often should a gc run?
+  - we'll spend a while on this but for now, let's just run as often as possible
+  - given that we set a flag
+  - this is very good for finding gc bugs
+  - specifically when we call reallocate to acquire more memory
+  - but only on additions not on the frees/shrinks of reallocate
+  - why here?
+    - collecting before allocation is classic way to write a gc into a vm
+    - also allocate is only place you need some more mem
+    - otherwise, a loop in memory could starve us out without this
+- if we aren't dealing with an object we won't attempt to gc
+- the garbage collector doesnt have to know about numbers, bools, and nils for ex
+- memory can even be reclaimed while the compiler is running
+- the compiler grabs memory from the heap for literals and constants in table
+- if the compiler is running, that all of that is considered roots too
+- tracing object references
+  - next part is tracing the graph of references betweens object to find unreachable
+  - we need to find indirectly reachable values
+    - we dont have instances with fields yet
+    - `ObjClosure` and `ObjUpvalue` close over as well as a reference to `ObjFunction`
+- tri color abstraction
+  - collection needs to be able to pause and pick up where it left off
+  - vm hackers came up with a metaphor called tri-color abstraction
+  - each object has a conceptual color that tracks what state object is in + what's left
+    - white: beginning of gc, every object, we have not reach or processed all
+    - gray: during marking, we gray objects, we have not traced or checked what objs refr
+    - black: gray object + all references are gray, phase is done so black
+  - steps
+      1. start will all objects white
+      2. find all the roots and mark gray
+      3. as long as there are gray objects,
+        - pick a gray object, turn any white objects that the object metions gray
+        - mark the og object black
+  - at the end, see of reached black objects sprinkled with island of white objects
+    - we then free these white objects
+    - finally, we set all black objects back to white preparing for the next gc cycle
+- a worklist for gray objects
+  - next we need to stack going through gray roots and walking their references
+- a black object is any object who `isMarked: true` and isn't on gray stack
+- we need to make sure to avoid cycles since object graphs aren't acyclic
+- sweep is pretty simple now. loop through all objects
+  - keep black and remove whites
+- one other small things, after sweeping each item, swap from black -> white to restart
+- weak references and the string pool
+  - recall we made the VM intern all the strings
+  - vm has a hash table containing a pointer to every single string on the heap
+  - vm does this to dedupe strings
+  - the string table is special and need support for that
+  - table should refer to a string but that link shouldn't be consider a root
+    - for reachability
+  - but also the dangling pointer needs to be fixed when it's freed
+  - these semantics come up often enough that it has a name: `weak reference`
+  - we dont know what strings are white until we've traced for references
+  - but we also can do this after sweeping -- bc corresponding objects are gone
+  - so we'll do it between marking and sweeping
+- now that we have that, question left is when do we collect
+  - in the early days, run when you run out of memory
+  - with modern machines, you have gigs of physical ram behind your OS
+  - this memory is shared among a bunch of programs
+  - you can request as much memory as you want from the OS
+  - the OS in turn willl page in and out from the disc when physical memory gets full
+  - you never really "run out" of memory but your program gets slower and slower
+  - two key metrics: `throughput` and `latency`
+  - we will track these
+- every gc language pays a cost for managing your memory
+- the gc spends cycles figuring out which memory to free
+- this is time spent not running user code
+- the goal of a sophisticated gc is to minimize this overhead
+- throughput
+  - total fraction of time spent running user code vs doing gc work
+  - 90% throughput is (10s clox code, 1 second gc)
+  - before this chapter, we technically had 100% throughput
+- latency
+  - the longest continuous chunk of time where user program is paused during gc
+  - measures how *chunky* the collector is
+  - latency is sort of worest case scenario in some ways
+  - on mobile for example, this is very important
+- our collector is a "stop-the-world" collector
+- if we run this algo infrequently, we will need to collect a lot of things
+  - this will cause high latency
+- so seems like we want to run the gc frequently
+- if you run the gc too frequently
+  - you dont even give user program time to generate garbage
+  - vm spends time visiting live objects over and over killing throughput
+  - so we want to run gc infrequently?
+  - in reality, we want a middle ground
+- how often we run our gc in one of our main knobs for tuing latency / throughput
+- self adjusting heap
+  - we could pawn these params to our user
+  - but if the users doesn't know how to tune, this isn't ideal
+  - our solution is run the gc based on the live size of the heap
+  - when our vm goes above a certain amount of memory, we trigger a GC
+  - then we note how much we freed, and adjust our threshold
+  - as our live memory goes down, we collect more frequently
+    - so we don't lose too much latency by waiting too long to collect
+  - the initial capacity is arbitrary -- we just dont want too many resizes/gc too start
+- in theory our gc is done now
+- what about GC bugs
+  - two sides
+  - VM fails to free objects that aren't needed slowly leaking memory
+  - if we free an object in use, the user's program can access invalid memory
+  - there are some bugs in the current implementation though left there on purpose
+    - we do this hack to avoid issues sometimes: push the value onto the stack (avoid gc)
+  - when we are done reallocating, pop it off
+  - addConstant needs this (adding a constant to our chunk)
+  - one more, when we create a string, we intern it
+  - since the string is new, it is unreachable for anyone
+    - we don't want it to get gced
+    - this just ensures we are safe while we resize
+  - final example, when we concat two strings with `OP_ADD`
+  - we make a new char array on the heap which can trigger gc
+  - we will peek to avoid gc -- instead of pop
+    - once we have copied stuff in, we can pop a, b off
+- in general gc bugs are hard bc you there is no problematic code you are reading
+- it's almost like the absence of something
+- generational hypothesis
+  - most objects are very short-lived
+  - but beyond a certain age, they tend to stick around for a long time
+  - this is interesting bc we partition objects into different groups
+  - from this comes generation garbage collection
+    - when object is created it gets sent to nursery
+    - gc runs frequently here
+    - every gc run across the nursery is called a generation
+    - objects that survive become one generation older
+    - when an object becomes beyond a certain age, it gets copied to a different region
+  - quite a brilliant idea bc gc aren't uniformly distributed
+  - if we have two unique gc, we can tune seperately to take advantage of this fact
