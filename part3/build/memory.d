@@ -1,9 +1,10 @@
-build/memory.o: memory.c common.h memory.h object.h chunk.h value.h vm.h \
-  table.h
+build/memory.o: memory.c common.h compiler.h vm.h chunk.h value.h \
+  object.h table.h memory.h
 common.h:
-memory.h:
-object.h:
+compiler.h:
+vm.h:
 chunk.h:
 value.h:
-vm.h:
+object.h:
 table.h:
+memory.h:
