@@ -255,6 +255,36 @@ void freeVM() {
   freeObjects();
 }
 
+static const char *valueTypeName(Value v) {
+  if (IS_BOOL(v))
+    return "bool";
+  if (IS_NIL(v))
+    return "nil";
+  if (IS_NUMBER(v))
+    return "number";
+  if (IS_OBJ(v)) {
+    switch (OBJ_TYPE(v)) {
+      case OBJ_STRING:
+        return "string";
+      case OBJ_FUNCTION:
+        return "function";
+      case OBJ_NATIVE:
+        return "native";
+      case OBJ_CLOSURE:
+        return "closure";
+      case OBJ_UPVALUE:
+        return "upvalue";
+      case OBJ_CLASS:
+        return "class";
+      case OBJ_INSTANCE:
+        return "instance";
+      case OBJ_BOUND_METHOD:
+        return "bound method";
+    }
+  }
+  return "unknown";
+}
+
 static InterpretResult run() {
   CallFrame *frame = &vm.frames[vm.frameCount - 1];
 #define READ_BYTE() (*frame->ip++)
@@ -320,6 +350,7 @@ static InterpretResult run() {
         Value value;
         if (!tableGet(&vm.globals, name, &value)) {
           runtimeError("Undefined variable '%s'", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
         }
         push(value);
         break;
@@ -353,6 +384,7 @@ static InterpretResult run() {
       case OP_SET_UPVALUE: {
         uint8_t slot = READ_BYTE();
         *frame->closure->upvalues[slot]->location = peek(0);
+        break;
       }
       case OP_GET_PROPERTY: {
         if (!IS_INSTANCE(peek(0))) {
@@ -387,6 +419,14 @@ static InterpretResult run() {
         Value value = pop();
         pop();
         push(value);
+        break;
+      }
+      case OP_GET_SUPER: {
+        ObjString *name = READ_STRING();
+        ObjClass *superclass = AS_CLASS(pop());
+        if (!bindMethod(superclass, name)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
         break;
       }
       case OP_EQUAL: {
@@ -467,6 +507,25 @@ static InterpretResult run() {
         frame = &vm.frames[vm.frameCount - 1];
         break;
       }
+      case OP_SUPER_INVOKE: {
+        ObjString *method = READ_STRING();
+        int argCount = READ_BYTE();
+        ObjClass *superclass = AS_CLASS(pop());
+        if (!invokeFromClass(superclass, method, argCount)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        frame = &vm.frames[vm.frameCount - 1];
+        break;
+      }
+      case OP_INVOKE: {
+        ObjString *method = READ_STRING();
+        int argCount = READ_BYTE();
+        if (!invoke(method, argCount)) {
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        frame = &vm.frames[vm.frameCount - 1];
+        break;
+      }
       case OP_CLOSURE: {
         ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
         ObjClosure *closure = newClosure(function);
@@ -489,6 +548,17 @@ static InterpretResult run() {
       }
       case OP_CLASS: {
         push(OBJ_VAL(newClass(READ_STRING())));
+        break;
+      }
+      case OP_INHERIT: {
+        Value superclass = peek(1);
+        if (!IS_CLASS(superclass)) {
+          runtimeError("Superclass must be a class");
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        ObjClass *subclass = AS_CLASS(peek(0));
+        tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
+        pop(); // subclass
         break;
       }
       case OP_METHOD: {

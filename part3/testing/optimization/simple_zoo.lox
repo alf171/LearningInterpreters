@@ -1,0 +1,6 @@
+class Zoo {
+  init() { this.sum = 0; }
+  inc() { this.sum = this.sum + 1; }
+}
+var z = Zoo();
+z.inc();
