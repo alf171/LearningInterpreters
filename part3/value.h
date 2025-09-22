@@ -2,6 +2,7 @@
 #define clox_value_h
 
 #include "common.h"
+#include <assert.h>
 #include <string.h>
 
 typedef struct Obj Obj;
@@ -12,9 +13,9 @@ typedef struct ObjString ObjString;
 #define SIGN_BIT ((uint64_t)0x8000000000000000)
 #define QNAN ((uint64_t)0x7ffc000000000000)
 
-#define TAG_NIL 1
-#define TAG_FALSE 2
-#define TAG_TRUE 3
+#define TAG_NIL 1u
+#define TAG_FALSE 2u
+#define TAG_TRUE 3u
 
 typedef uint64_t Value;
 
@@ -46,6 +47,11 @@ static inline Value numToValue(double num) {
   return value;
 }
 
+// Compile-time sanity:
+_Static_assert(sizeof(Value) == 8, "NaN-boxing requires 64-bit Value");
+_Static_assert(sizeof(double) == 8, "NaN-boxing requires 64-bit double");
+
+// Quick runtime self-test (call once at startup in DEBUG):
 #else
 
 typedef enum {

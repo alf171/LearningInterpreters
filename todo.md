@@ -9,7 +9,7 @@
       - very similar to if or for
     6. 23/ support continue
       - jump to the top of the nearest enclosing loop skipping rest of body
-    7. 24/ we spend most of our time touching ip
+    7. [DONE] 24/ we spend most of our time touching ip
       - can we keep it in a native cpu register
     8. 24/ add an arity check to native functions
     9. 25/ Change clox to not need to wrap every `ObjFunction` in `ObjClosure`

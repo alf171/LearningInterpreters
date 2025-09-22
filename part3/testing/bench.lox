@@ -1,0 +1,64 @@
+// --- Simple linked list to keep strings alive ---
+class Node {
+  init(v, next) { this.v = v; this.next = next; }
+}
+
+// 1) Create & discard many short strings (allocator + GC pressure)
+fun bench_alloc_discard(n) {
+  var t0 = clock();
+  var i = 0;
+  while (i < n) {
+    var a = "a" + "b";
+    var b = "c" + "d";
+    var c = a + b;
+    // keep side effects impossible to optimize away
+    if (a == "zzzzzzz") print(b + c);
+    i = i + 1;
+  }
+  print("alloc_discard(" + n + "): " + (clock() - t0) + "s");
+}
+
+// 2) Build N distinct strings and keep them (stresses string creation & interning)
+fun bench_unique_keep(n) {
+  var t0 = clock();
+  var head = nil;
+  var s = "";
+  var i = 0;
+  while (i < n) {
+    s = s + "a";              // new unique string each time
+    head = Node(s, head);     // keep alive so GC can't reclaim
+    i = i + 1;
+  }
+  // traverse the list to touch memory and avoid DCE
+  var total = 0;
+  var p = head;
+  while (p != nil) {
+    total = total + p.v.length;
+    p = p.next;
+  }
+  if (total == -1) print(total); // anti-DCE
+  print("unique_keep(" + n + "): " + (clock() - t0) + "s");
+}
+
+// 3) Repeated string comparisons (hash/equality paths)
+fun bench_equality(n) {
+  var t0 = clock();
+  var s = "";
+  var i = 0;
+  while (i < n) {
+    s = s + "a";        // creates/interns another string
+    var t = s + "b";    // definitely not equal to s
+    if (s == t) print("oops");
+    i = i + 1;
+  }
+  print("equality(" + n + "): " + (clock() - t0) + "s");
+}
+
+// ---- Run ----
+var N1 = 400000;  // tune based on your machine
+var N2 = 80000;
+var N3 = 120000;
+
+bench_alloc_discard(N1);
+bench_unique_keep(N2);
+bench_equality(N3);
